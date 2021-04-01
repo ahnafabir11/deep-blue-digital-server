@@ -1,13 +1,13 @@
 require('dotenv').config();
-const express = require('express');
 const cors = require('cors');
-const MongoClient = require('mongodb').MongoClient;
+const express = require('express');
 const ObjectID = require('mongodb').ObjectID;
-const { query } = require('express');
+const MongoClient = require('mongodb').MongoClient;
 
 const app = express();
 const port = process.env.PORT || 5000;
 
+// middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -25,9 +25,9 @@ client.connect(err => {
   // get all products
   app.get('/products', (req, res) => {
     productCollection.find({})
-      .toArray((err, document) => {
+      .toArray((err, products) => {
         res.status(200);
-        res.send(document);
+        res.send(products);
       })
   })
 
@@ -35,9 +35,9 @@ client.connect(err => {
   app.get('/product/:id', (req, res)=> {
     const _id = ObjectID(req.params.id);
     productCollection.find({_id})
-    .toArray((err, document)=> {
+    .toArray((err, product)=> {
       res.status(200);
-      res.send(document[0]);
+      res.send(product[0]);
     })
   })
 
@@ -46,7 +46,8 @@ client.connect(err => {
     const productDetails = req.body;
     productCollection.insertOne(productDetails)
       .then(result => {
-        res.status(200).send('Inserted');
+        res.status(200);
+        res.send({inserted: result.insertedCount});
       })
   })
 
@@ -55,16 +56,18 @@ client.connect(err => {
     const _id =  ObjectID(req.body.id);
     productCollection.deleteOne({_id})
       .then(result => {
-        res.status(200)
+        res.status(200);
+        res.send({deleted: result.deletedCount})
       })
   })
 
-  // post a new order
+  // add a new order
   app.post('/addOrder', (req, res)=> {
     const orderDetails = req.body;
     orderCollection.insertOne(orderDetails)
     .then(result=> {
-      res.status(200).send("Order Placed")
+      res.status(200);
+      res.send({inserted: result.insertedCount});
     })
   })
 
@@ -72,12 +75,11 @@ client.connect(err => {
   app.get('/orders/:email', (req, res)=> {
     const userEmail = req.params.email;
     orderCollection.find({userEmail})
-      .toArray((err, document)=> {
-        res.send(document)
+      .toArray((err, orders)=> {
+        res.send(orders)
       })
   })
 
 });
-
 
 app.listen(port);
